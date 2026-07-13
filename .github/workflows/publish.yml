@@ -1,0 +1,55 @@
+name: Publish extension
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-marketplace
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Determine version change
+        id: version
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          if git show HEAD~1:package.json > /tmp/prev-package.json 2>/dev/null; then
+            PREVIOUS=$(node -p "require('/tmp/prev-package.json').version")
+          else
+            PREVIOUS=""
+          fi
+          echo "Current version: $CURRENT / Previous version: $PREVIOUS"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          if [ "$CURRENT" != "$PREVIOUS" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        if: steps.version.outputs.changed == 'true'
+        run: npm ci
+
+      - name: Publish to Visual Studio Marketplace
+        if: steps.version.outputs.changed == 'true'
+        run: npx --yes @vscode/vsce publish -p "$VSCE_PAT"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Skipped (version unchanged)
+        if: steps.version.outputs.changed != 'true'
+        run: echo "package.json version (${{ steps.version.outputs.current }}) unchanged — nothing to publish."

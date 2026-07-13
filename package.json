@@ -3,7 +3,7 @@
   "displayName": "Memowl",
   "description": "Browse and manage GitHub Copilot's native agent memories, with scope awareness and workspace-hash mapping.",
   "version": "0.0.1",
-  "publisher": "memowl",
+  "publisher": "jlieuw",
   "license": "MIT",
   "repository": {
     "type": "git",

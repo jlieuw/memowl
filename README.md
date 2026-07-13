@@ -26,6 +26,16 @@ Copilot keeps memories in three scopes, and Memowl surfaces all of them so you a
 
 > Repository and session memories are keyed to a **workspace hash**, not a git repo — see the next section.
 
+## Install
+
+Install **Memowl** from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=jlieuw.memowl), or from the Extensions view with:
+
+```
+ext install jlieuw.memowl
+```
+
+Every release is also published on the [GitHub Releases page](https://github.com/jlieuw/memowl/releases) with a downloadable `.vsix`.
+
 ## Why the hash mapping matters
 
 Copilot's repository-scoped memory is keyed to a **workspace hash**, not to a git repo. Open the same folder as part of a different (e.g. multi-root) workspace and it gets a *different* store. Memowl shows this explicitly so you always know which memories apply where.

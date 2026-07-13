@@ -1,11 +1,11 @@
 name: Publish extension
 
 on:
-  push:
-    branches: [main]
+  release:
+    types: [published]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: publish-marketplace
@@ -16,40 +16,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Determine version change
-        id: version
+      - name: Verify release tag matches package.json version
+        id: check
         run: |
-          CURRENT=$(node -p "require('./package.json').version")
-          if git show HEAD~1:package.json > /tmp/prev-package.json 2>/dev/null; then
-            PREVIOUS=$(node -p "require('/tmp/prev-package.json').version")
-          else
-            PREVIOUS=""
+          VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "package.json version: $VERSION / release tag: $GITHUB_REF_NAME (normalized: $TAG_VERSION)"
+          if [ "$VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Release tag '$GITHUB_REF_NAME' does not match package.json version '$VERSION'. Bump the version and re-tag."
+            exit 1
           fi
-          echo "Current version: $CURRENT / Previous version: $PREVIOUS"
-          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
-          if [ "$CURRENT" != "$PREVIOUS" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
-        if: steps.version.outputs.changed == 'true'
         run: npm ci
 
+      - name: Package extension
+        run: npx --yes @vscode/vsce package --out "memowl-${{ steps.check.outputs.version }}.vsix"
+
       - name: Publish to Visual Studio Marketplace
-        if: steps.version.outputs.changed == 'true'
-        run: npx --yes @vscode/vsce publish -p "$VSCE_PAT"
+        run: npx --yes @vscode/vsce publish --packagePath "memowl-${{ steps.check.outputs.version }}.vsix"
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
-      - name: Skipped (version unchanged)
-        if: steps.version.outputs.changed != 'true'
-        run: echo "package.json version (${{ steps.version.outputs.current }}) unchanged — nothing to publish."
+      - name: Attach VSIX to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" "memowl-${{ steps.check.outputs.version }}.vsix" --clobber

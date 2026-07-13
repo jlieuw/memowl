@@ -1,0 +1,9 @@
+.vscode/**
+.vscode-test/**
+src/**
+scripts/**
+media/icon-source.svg
+node_modules/**
+**/*.ts
+**/tsconfig.json
+.gitignore

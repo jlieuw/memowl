@@ -1,0 +1,38 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#312E81"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+
+  <!-- crescent moon accent -->
+  <path d="M97 20a14 14 0 1 0 13 20 16 16 0 0 1-13-20z" fill="#FDE68A"/>
+
+  <!-- ear tufts -->
+  <path d="M43 41c-5-9-4-17-1-21 4 4 9 10 10 19z" fill="#EEF2FF"/>
+  <path d="M85 41c5-9 4-17 1-21-4 4-9 10-10 19z" fill="#EEF2FF"/>
+
+  <!-- body / head -->
+  <path d="M64 29c-18 0-31 13-31 33v9c0 19 14 32 31 32s31-13 31-32v-9c0-20-13-33-31-33z" fill="#EEF2FF"/>
+
+  <!-- eyes -->
+  <circle cx="50" cy="59" r="16" fill="#FFFFFF"/>
+  <circle cx="78" cy="59" r="16" fill="#FFFFFF"/>
+  <circle cx="50" cy="59" r="7.5" fill="#312E81"/>
+  <circle cx="78" cy="59" r="7.5" fill="#312E81"/>
+  <circle cx="53" cy="56" r="2.6" fill="#FFFFFF"/>
+  <circle cx="81" cy="56" r="2.6" fill="#FFFFFF"/>
+
+  <!-- beak -->
+  <path d="M64 67l-6.5 10h13z" fill="#F59E0B"/>
+
+  <!-- belly hint -->
+  <path d="M64 86c-7 0-12 5-13 11 4 3 8 5 13 5s9-2 13-5c-1-6-6-11-13-11z" fill="#C7D2FE" opacity="0.75"/>
+
+  <!-- feet -->
+  <path d="M55 103l-3 7M59 103v7M63 103l3 7" stroke="#F59E0B" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M73 103l-3 7M69 103v7M65 103l3 7" stroke="#F59E0B" stroke-width="3.2" stroke-linecap="round"/>
+</svg>

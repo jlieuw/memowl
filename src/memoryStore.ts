@@ -47,28 +47,73 @@ function basenameFromUriString(uriStr: string): string {
   }
 }
 
+/** What a single `workspaceStorage/<hash>` directory maps to. */
+export interface WorkspaceStorageInfo {
+  hash: string;
+  /** Absolute path of `.../workspaceStorage/<hash>`. */
+  dir: string;
+  /** Friendly folder / .code-workspace name(s). */
+  names: string[];
+  /** The folder or `.code-workspace` file this hash belongs to, when recorded. */
+  target?: vscode.Uri;
+  /** True when `target` points at a `.code-workspace` file rather than a folder. */
+  isWorkspaceFile: boolean;
+}
+
 /**
- * Reads `workspace.json` inside a workspaceStorage hash directory and returns the
- * friendly folder / .code-workspace name(s) it maps to. This is what turns an opaque
- * hash like `6d567ab1...` into "uip.base" (or the workspace file name).
+ * Reads `workspace.json` inside a workspaceStorage hash directory. This is what turns
+ * an opaque hash like `6d567ab1...` into "uip.base" (or the workspace file name).
  */
-async function readWorkspaceNames(hashDir: string): Promise<string[]> {
+export async function readWorkspaceInfo(
+  workspaceStorageDir: string,
+  hash: string
+): Promise<WorkspaceStorageInfo> {
+  const dir = path.join(workspaceStorageDir, hash);
+  const info: WorkspaceStorageInfo = {
+    hash,
+    dir,
+    names: [],
+    isWorkspaceFile: false,
+  };
+
+  let uriStr: string | undefined;
   try {
-    const raw = await fs.readFile(path.join(hashDir, 'workspace.json'), 'utf8');
-    const parsed = JSON.parse(raw) as {
-      folder?: string;
-      workspace?: string;
-    };
-    if (parsed.folder) {
-      return [basenameFromUriString(parsed.folder)];
-    }
-    if (parsed.workspace) {
-      return [basenameFromUriString(parsed.workspace)];
-    }
-    return [];
+    const raw = await fs.readFile(path.join(dir, 'workspace.json'), 'utf8');
+    const parsed = JSON.parse(raw) as { folder?: string; workspace?: string };
+    uriStr = parsed.folder ?? parsed.workspace;
+    info.isWorkspaceFile = !parsed.folder && !!parsed.workspace;
   } catch {
-    return [];
+    return info;
   }
+
+  if (!uriStr) {
+    return info;
+  }
+  info.names = [basenameFromUriString(uriStr)];
+  try {
+    info.target = vscode.Uri.parse(uriStr);
+  } catch {
+    // Leave `target` unset; the hash is still usable for display.
+  }
+  return info;
+}
+
+/**
+ * Locates the `.../User/workspaceStorage` directory and the hash of the workspace
+ * currently open in this window.
+ */
+export async function locateWorkspaceStorage(
+  context: vscode.ExtensionContext
+): Promise<{ dir?: string; currentHash?: string }> {
+  if (context.storageUri) {
+    const hashDir = path.dirname(context.storageUri.fsPath); // .../workspaceStorage/<hash>
+    return { dir: path.dirname(hashDir), currentHash: path.basename(hashDir) };
+  }
+
+  // No folder open: derive workspaceStorage as a sibling of globalStorage.
+  const userDir = path.dirname(path.dirname(context.globalStorageUri.fsPath));
+  const candidate = path.join(userDir, 'workspaceStorage');
+  return (await exists(candidate)) ? { dir: candidate } : {};
 }
 
 /**
@@ -96,21 +141,8 @@ export async function getMemoryRoots(
   });
 
   // --- Workspace-scoped roots ---------------------------------------------
-  let workspaceStorageDir: string | undefined;
-  let currentHash: string | undefined;
-
-  if (context.storageUri) {
-    const hashDir = path.dirname(context.storageUri.fsPath); // .../workspaceStorage/<hash>
-    currentHash = path.basename(hashDir);
-    workspaceStorageDir = path.dirname(hashDir); // .../workspaceStorage
-  } else {
-    // No folder open: derive workspaceStorage as a sibling of globalStorage.
-    const userDir = path.dirname(globalStorageDir); // .../User
-    const candidate = path.join(userDir, 'workspaceStorage');
-    if (await exists(candidate)) {
-      workspaceStorageDir = candidate;
-    }
-  }
+  const { dir: workspaceStorageDir, currentHash } =
+    await locateWorkspaceStorage(context);
 
   if (workspaceStorageDir && (await exists(workspaceStorageDir))) {
     let entries: import('fs').Dirent[] = [];
@@ -136,7 +168,7 @@ export async function getMemoryRoots(
         continue;
       }
 
-      const names = await readWorkspaceNames(hashDir);
+      const { names } = await readWorkspaceInfo(workspaceStorageDir, hash);
       const label = isCurrent
         ? 'This workspace'
         : names[0] ?? hash.slice(0, 8);

@@ -12,6 +12,7 @@ Copilot's agent quietly accumulates memory files (project conventions, decisions
   - **Other workspaces** — every other workspace that has memories, each labelled with the folder / `.code-workspace` name it maps to (not just a hash)
 - **Well-known scope hints** — `repo/` and `session/` subfolders are annotated with their meaning.
 - **Manage** — create, open, delete memories; reveal in the OS file explorer; copy path.
+- **Chat sessions per workspace** — a second view lists your Copilot chat history grouped by the workspace it belongs to, so you can find the conversation you lost track of. Click one to resume it; chats from another workspace offer to reopen that workspace in a new window and continue there. Use the title-bar toggle to switch between grouping by **workspace** (ordered by most recent chat) and by **recency** (a flat list across every workspace, bucketed by day).
 - **Reliable location** — anchors on the extension's own storage URIs, so it finds the Copilot store correctly across VS Code, Insiders and VSCodium, on any OS.
 
 ## Scopes explained
@@ -46,6 +47,14 @@ Copilot's repository-scoped memory is keyed to a **workspace hash**, not to a gi
 <User>/globalStorage/GitHub.copilot-chat/memory-tool/memories/            <- User (global)
 <User>/workspaceStorage/<hash>/GitHub.copilot-chat/memory-tool/memories/  <- per-workspace (repo/, session/)
 ```
+
+## Where chat sessions are stored
+
+```
+<User>/workspaceStorage/<hash>/chatSessions/<sessionId>.jsonl
+```
+
+Each conversation is an append-only log keyed to the same workspace hash, which is why a chat can only be resumed in a window that has that workspace open.
 
 ## Run the prototype
 

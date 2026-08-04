@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { getMemoryRoots, listDir, MemoryRoot } from './memoryStore';
+import { escapeMarkdown } from './markdown';
 
 /** A node representing one of the discovered memory storage roots. */
 export interface RootNode {
@@ -86,16 +87,18 @@ export class MemoryTreeProvider
     }
 
     const tooltip = new vscode.MarkdownString();
-    tooltip.appendMarkdown(`**${root.label}**\n\n`);
+    tooltip.appendMarkdown(`**${escapeMarkdown(root.label)}**\n\n`);
     if (root.kind === 'workspace' && root.hash) {
-      tooltip.appendMarkdown(`Workspace hash: \`${root.hash}\`\n\n`);
+      tooltip.appendMarkdown(
+        `Workspace hash: ${escapeMarkdown(root.hash)}\n\n`
+      );
       if (root.workspaceNames?.length) {
         tooltip.appendMarkdown(
-          `Maps to: ${root.workspaceNames.map((n) => `\`${n}\``).join(', ')}\n\n`
+          `Maps to: ${root.workspaceNames.map(escapeMarkdown).join(', ')}\n\n`
         );
       }
     }
-    tooltip.appendMarkdown(`\`${root.fsPath}\``);
+    tooltip.appendCodeblock(root.fsPath);
     item.tooltip = tooltip;
 
     return item;
